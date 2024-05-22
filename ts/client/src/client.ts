@@ -67,9 +67,6 @@ export function nameToString(name: number[]): string {
   return utf8.decode(new Uint8Array(name)).split('\x00')[0];
 }
 
-const BooksideSpace = 90944 + 8;
-const EventHeapSpace = 91280 + 8;
-
 export const OPENBOOK_PROGRAM_ID = new PublicKey(
   'opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb',
 );
@@ -218,6 +215,8 @@ export class OpenBookV2Client {
     makerFee: BN,
     takerFee: BN,
     timeExpiry: BN,
+    BooksideSpace: number,
+    EventHeapSpace: number,
     oracleA: PublicKey | null,
     oracleB: PublicKey | null,
     openOrdersAdmin: PublicKey | null,
@@ -312,12 +311,12 @@ export class OpenBookV2Client {
     marketPublicKey: PublicKey,
     market: MarketAccount,
     solDestination: PublicKey,
-    closeMarketAdmin: Keypair | null = null,
+    closeMarketAdmin: PublicKey,
   ): Promise<[TransactionInstruction, Signer[]]> {
     const ix = await this.program.methods
       .closeMarket()
       .accounts({
-        closeMarketAdmin: market.closeMarketAdmin.key,
+        closeMarketAdmin: closeMarketAdmin,
         market: marketPublicKey,
         asks: market.asks,
         bids: market.bids,
@@ -327,13 +326,6 @@ export class OpenBookV2Client {
       })
       .instruction();
     const signers: Signer[] = [];
-    if (
-      this.walletPk !== market.closeMarketAdmin.key &&
-      closeMarketAdmin !== null
-    ) {
-      signers.push(closeMarketAdmin);
-    }
-
     return [ix, signers];
   }
 
